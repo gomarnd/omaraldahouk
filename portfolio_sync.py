@@ -27,7 +27,7 @@ def should_publish(file_path):
 
 def sync_portfolio():
     print("🔄 جاري فحص مجلد Obsidian للمشاريع الجديدة محلياً...")
-
+    
     if not os.path.exists(CONTENT_DEST_PATH):
         os.makedirs(CONTENT_DEST_PATH, exist_ok=True)
 
@@ -41,17 +41,23 @@ def sync_portfolio():
                     shutil.copy(file_path, dest_path)
                     published_count += 1
 
-    if published_count > 0:
-        print(f"📦 تم العثور على {published_count} ملف للتحديث. جاري الرفع إلى GitHub...")
-        try:
-            subprocess.run(["git", "-C", GITHUB_REPO_LOCAL_PATH, "add", "."], check=True)
+    print(f"📦 تم العثور على {published_count} ملف مطابق لشروط النشر.")
+    
+    try:
+        subprocess.run(["git", "-C", GITHUB_REPO_LOCAL_PATH, "add", "."], check=True)
+        
+        # فحص ما إذا كانت هناك تغييرات فعلية تستدعي الـ commit والـ push
+        status_res = subprocess.run(["git", "-C", GITHUB_REPO_LOCAL_PATH, "status", "--porcelain"], capture_output=True, text=True, check=True)
+        
+        if status_res.stdout.strip():
             subprocess.run(["git", "-C", GITHUB_REPO_LOCAL_PATH, "commit", "-m", "Automated Portfolio Sync via Pure Python Script"], check=True)
-            subprocess.run(["git", "-C", GITHUB_REPO_LOCAL_PATH, "push"], check=True)
+            subprocess.run(["git", "-C", GITHUB_REPO_LOCAL_PATH, "push", "-u", "origin", "master"], check=True)
             print("🚀 تمت المزامنة والرفع إلى GitHub بنجاح!")
-        except subprocess.CalledProcessError as sub_err:
-            print(f"❌ فشل رفع Git: {sub_err}")
-    else:
-        print("📭 لا توجد مشاريع مأشّرة للرفع حالياً.")
+        else:
+            print("📭 المستودع محدث بالكامل، لا توجد تغييرات جديدة لرفعها.")
+            
+    except subprocess.CalledProcessError as sub_err:
+        print(f"❌ فشل عملية Git: {sub_err}")
 
 if __name__ == "__main__":
     sync_portfolio()
