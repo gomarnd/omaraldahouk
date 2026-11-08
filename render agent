@@ -1,0 +1,8 @@
+services:
+  - type: worker
+    name: telegram-ai-agent
+    env: python
+    region: frankfurt
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python main.py
